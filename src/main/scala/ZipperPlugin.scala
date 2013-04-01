@@ -63,17 +63,24 @@ object ZipperPlugin extends Plugin {
 	private val rwxr_xr_x	= octal("755")
 	private val rw_r__r__	= octal("644")
 	
-	/** files must be isFile, paths must use a forward slash, unix mode is optional */
+	/** paths must use a forward slash, unix mode is optional, symlinks are ignored */
 	private def bundle(streams:TaskStreams, sources:Seq[(File,String)], outputZip:File) {
 		val outputStream	= new ZipArchiveOutputStream(outputZip)
 		// outputStream	setMethod	ZipOutputStream.DEFLATED
 		// outputStream	setLevel	0
 		try {
+			val sourceDirectories		= sources filter { _._1.isDirectory	}
+			val sourceFiles				= sources filter { _._1.isFile		}
+			
+			// ensure every file has a parent directory
+			val sourceDirectoryPaths	= sourceDirectories map { _._2 + "/" }
+			val sourceParentPaths		= sourceFiles		map { _._2 } flatMap pathDirs
+			val zipDirectories			= (sourceDirectoryPaths ++ sourceParentPaths).distinct
+			
 			val now			= System.currentTimeMillis
 			val emptyCRC	= (new CRC32).getValue
 			
-			val sourceDirs:Seq[String]	= (sources map { _._2 } flatMap pathDirs).distinct
-			sourceDirs foreach { path =>
+			zipDirectories foreach { path =>
 				val entry	= new ZipArchiveEntry(path)
 				entry	setMethod	ZipEntry.STORED
 				entry	setSize		0
@@ -84,7 +91,7 @@ object ZipperPlugin extends Plugin {
 				outputStream.closeArchiveEntry()
 			}
 			
-			sources foreach { case (file, path) => 
+			sourceFiles foreach { case (file, path) => 
 				val entry	= new ZipArchiveEntry(path)
 				entry	setMethod	ZipEntry.STORED
 				entry	setSize		file.length
