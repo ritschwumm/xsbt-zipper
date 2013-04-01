@@ -47,50 +47,49 @@ object ZipperPlugin {
 		streams.log info ("creating bundle zip as " + zip)
 		IO delete zip
 		zip.getParentFile.mkdirs()
-		
-		val rwxr_xr_x	= Integer parseInt ("755", 8)
-		val rw_r__r__	= Integer parseInt ("644", 8)
-		
-		def mode(file:File):Option[Int]	= 
-				if (file.canExecute)	Some(rwxr_xr_x) 
-				else					Some(rw_r__r__)
 			
 		val extended	= files map {
-			case (file, path)	=> (file, prefix + path, mode(file)) 
+			case (file, path)	=> (file, prefix + path) 
 		} 
-		bundle(extended, zip)
+		bundle(streams, extended, zip)
 		
 		zip
 	}
 	
+	private val fileMode	= Integer parseInt ("100000", 8)
+	private val dirMode		= Integer parseInt ("040000", 8)
+	private val linkMode	= Integer parseInt ("120000", 8)
+		
+	private val rwxr_xr_x	= Integer parseInt ("755", 8)
+	private val rw_r__r__	= Integer parseInt ("644", 8)
+		
 	/** files must be isFile, paths must use a forward slash, unix mode is optional */
-	private def bundle(sources:Seq[(File,String,Option[Int])], outputZip:File) {
+	private def bundle(streams:TaskStreams, sources:Seq[(File,String)], outputZip:File) {
 		val outputStream	= new ZipArchiveOutputStream(outputZip)
 		// outputStream	setMethod	ZipOutputStream.DEFLATED
 		// outputStream	setLevel	0
 		try {
 			val now			= System.currentTimeMillis
-			val emptyCRC	= new CRC32().getValue
-			val buffer		= new Array[Byte](16384)
+			val emptyCRC	= (new CRC32).getValue
 			
 			val sourceDirs:Seq[String]	= (sources map { _._2 } flatMap pathDirs).distinct
-				
 			sourceDirs foreach { path =>
 				val entry	= new ZipArchiveEntry(path)
 				entry	setMethod	ZipEntry.STORED
 				entry	setSize		0
 				entry	setTime		now
 				entry	setCrc		emptyCRC
+				entry	setUnixMode	(dirMode | rwxr_xr_x)
 				outputStream  	putArchiveEntry entry
 				outputStream.closeArchiveEntry()
 			}
 			
-			sources foreach { case (file, path, mode) => 
+			sources foreach { case (file, path) => 
 				val entry	= new ZipArchiveEntry(path)
 				entry	setMethod	ZipEntry.STORED
 				entry	setSize		file.length
 				entry	setTime		file.lastModified
-				mode			foreach			entry.setUnixMode
+				entry	setUnixMode	(fileMode | (if (file.canExecute) rwxr_xr_x else rw_r__r__))
 				outputStream  	putArchiveEntry	entry
 				
 				val inputStream	= new FileInputStream(file)
@@ -108,6 +107,8 @@ object ZipperPlugin {
 			outputStream.close()
 		}
 	}
+	
+	
 	
 	private def pathDirs(path:String):Seq[String]	= 
 			(path split "/").init.inits.toList.init.reverse map { _ mkString ("", "/", "/") }
