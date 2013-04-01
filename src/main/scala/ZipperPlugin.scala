@@ -9,7 +9,7 @@ import java.util.zip.ZipEntry
 import org.apache.commons.compress.archivers.zip._
 import org.apache.commons.compress.utils.IOUtils
 
-object ZipperPlugin {
+object ZipperPlugin extends Plugin {
 	/** build the zip file */
 	val zipperBuild		= TaskKey[File]("zipper")
 	/** files to be included in the bundle zip */
@@ -56,13 +56,13 @@ object ZipperPlugin {
 		zip
 	}
 	
-	private val fileMode	= Integer parseInt ("100000", 8)
-	private val dirMode		= Integer parseInt ("040000", 8)
-	private val linkMode	= Integer parseInt ("120000", 8)
+	private val fileMode	= octal("100000")
+	private val dirMode		= octal("040000")
+	private val linkMode	= octal("120000")
 		
-	private val rwxr_xr_x	= Integer parseInt ("755", 8)
-	private val rw_r__r__	= Integer parseInt ("644", 8)
-		
+	private val rwxr_xr_x	= octal("755")
+	private val rw_r__r__	= octal("644")
+	
 	/** files must be isFile, paths must use a forward slash, unix mode is optional */
 	private def bundle(streams:TaskStreams, sources:Seq[(File,String)], outputZip:File) {
 		val outputStream	= new ZipArchiveOutputStream(outputZip)
@@ -108,8 +108,8 @@ object ZipperPlugin {
 		}
 	}
 	
-	
-	
 	private def pathDirs(path:String):Seq[String]	= 
 			(path split "/").init.inits.toList.init.reverse map { _ mkString ("", "/", "/") }
+		
+	private def octal(s:String):Int	= Integer parseInt (s, 8)
 }

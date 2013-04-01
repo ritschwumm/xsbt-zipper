@@ -4,7 +4,7 @@ name			:= "xsbt-zipper"
 
 organization	:= "de.djini"
 
-version			:= "0.1.2"
+version			:= "0.2.0"
 
 scalacOptions	++= Seq("-deprecation", "-unchecked")
 
