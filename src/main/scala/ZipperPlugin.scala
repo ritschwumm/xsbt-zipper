@@ -12,49 +12,59 @@ import org.apache.commons.compress.utils.IOUtils
 object ZipperPlugin extends Plugin {
 	/** build the zip file */
 	val zipperBuild		= TaskKey[File]("zipper")
+	
 	/** files to be included in the bundle zip */
 	val zipperFiles		= TaskKey[Seq[(File,String)]]("zipper-files")
-	/** default name for common directory and bundle zip */
-	val zipperName		= SettingKey[String]("zipper-name")
+	
+	/** default name for common directory prefix and bundle zip */
+	val zipperBundle	= SettingKey[String]("zipper-bundle")
+	
 	/** common directory prefix for all files in the bundle zip */
-	val zipperPrefix	= SettingKey[String]("zipper-prefix")
-	/** bundle zip file to be created */
-	val zipperZip		= SettingKey[File]("zipper-zip")
+	val zipperPrefix	= SettingKey[Option[String]]("zipper-prefix")
+	
+	/** file extension for the bundle zip */
+	val zipperExtension	= SettingKey[String]("zipper-extension")
+	
+	/** file name of the bundle zip */
+	val zipperName		= SettingKey[String]("zipper-name")
+	
 	/** directory for the bundle zip file */
 	val zipperTarget	= SettingKey[File]("zipper-target")
 	
+	/** bundle zip file to be created */
+	val zipperZip		= SettingKey[File]("zipper-zip")
+	
 	lazy val zipperSettings:Seq[Project.Setting[_]]	= Seq(
 		zipperBuild		<<= zipperTask,
-		zipperFiles		:= Seq.empty,
-		zipperTarget	<<= Keys.crossTarget { 
-			_ / "zipper"
-		},
-		zipperName		<<= (Keys.name, Keys.version) { 
-			(name, version)	=> name + "-" + version
-		},
-		zipperPrefix	<<= zipperName { 
-			_ + "/" 
-		},
-		zipperZip		<<= (zipperTarget, zipperName)	{ 
-			(zipperTarget, zipperName)	=> zipperTarget / (zipperName + ".zip")
-		}
+		zipperFiles		:=  Seq.empty,
+		zipperBundle	<<= (Keys.name, Keys.version)		{ _ + "-" + _ 	},
+		zipperPrefix	<<= zipperBundle					{ Some(_)		},
+		zipperExtension	:=  ".zip",
+		zipperName		<<= (zipperBundle, zipperExtension)	{ _ + _			},
+		zipperTarget	<<= Keys.crossTarget				{ _ / "zipper"	},
+		zipperZip		<<= (zipperTarget, zipperName)		{ _ / _			}
 	)
 	
 	private def zipperTask:Initialize[Task[File]] = 
 			(Keys.streams, zipperFiles, zipperPrefix, zipperZip) map zipperTaskImpl
 	
-	private def zipperTaskImpl(streams:TaskStreams, files:Seq[(File,String)], prefix:String, zip:File):File	= {
+	private def zipperTaskImpl(streams:TaskStreams, files:Seq[(File,String)], prefix:Option[String], zip:File):File	= {
 		streams.log info ("creating bundle zip as " + zip)
 		IO delete zip
 		zip.getParentFile.mkdirs()
-			
-		val extended	= files map {
-			case (file, path)	=> (file, prefix + path) 
-		} 
-		bundle(streams, extended, zip)
+		
+		type Mapping	= (File,String)
+		val addPrefix:Mapping=>Mapping	= prefix match {
+			case Some(s)	=> modifySnd(s + "/" + (_:String))
+			case None		=> identity
+		}
+		val prefixed	= files map addPrefix
+		bundle(streams, prefixed, zip)
 		
 		zip
 	}
+	
+	private def modifySnd[R,S,T](func:S=>T)(it:(R,S)):(R,T)	= (it._1, func(it._2))
 	
 	private val fileMode	= octal("100000")
 	private val dirMode		= octal("040000")
