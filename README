@@ -1,0 +1,22 @@
+A plugin for xsbt creating zipfiles with unix exeutable bits
+
+To build this code, get and install SBT from 
+    https://github.com/harrah/xsbt
+
+Build and publish the plugin:
+    git clone git@github.com:ritschwumm/xsbt-zipper.git
+    cd xsbt-zipper
+    sbt publish-local
+    
+Add the plugin to your project in project/plugins.sbt:
+    addSbtPlugin("de.djini" % "xsbt-zipper" % "0.1.0")
+    
+Include the plugin in you project's build.sbt:
+
+    zipperSettings
+
+    zipperFiles	:= Seq(
+    	file	-> name
+    )
+
+Run the zipper task to get a zipfile.
