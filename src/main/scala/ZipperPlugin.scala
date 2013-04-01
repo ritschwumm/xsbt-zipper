@@ -23,7 +23,7 @@ object ZipperPlugin {
 	/** directory for the bundle zip file */
 	val zipperTarget	= SettingKey[File]("zipper-target")
 	
-	lazy val zipperSettings	= Seq(
+	lazy val zipperSettings:Seq[Project.Setting[_]]	= Seq(
 		zipperBuild		<<= zipperTask,
 		zipperFiles		:= Seq.empty,
 		zipperTarget	<<= Keys.crossTarget { 
@@ -48,9 +48,12 @@ object ZipperPlugin {
 		IO delete zip
 		zip.getParentFile.mkdirs()
 		
+		val rwxr_xr_x	= Integer parseInt ("755", 8)
+		val rw_r__r__	= Integer parseInt ("644", 8)
+		
 		def mode(file:File):Option[Int]	= 
-				if (file.canExecute)	Some(755) 
-				else					None
+				if (file.canExecute)	Some(rwxr_xr_x) 
+				else					Some(rw_r__r__)
 			
 		val extended	= files map {
 			case (file, path)	=> (file, prefix + path, mode(file)) 
