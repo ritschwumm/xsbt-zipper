@@ -14,7 +14,7 @@ object ZipperPlugin extends Plugin {
 	val zipperBuild		= TaskKey[File]("zipper")
 	
 	/** files to be included in the bundle zip */
-	val zipperFiles		= TaskKey[Seq[(File,String)]]("zipper-files")
+	val zipperFiles		= TaskKey[Traversable[(File,String)]]("zipper-files")
 	
 	/** default name for common directory prefix and bundle zip */
 	val zipperBundle	= SettingKey[String]("zipper-bundle")
@@ -34,22 +34,23 @@ object ZipperPlugin extends Plugin {
 	/** bundle zip file to be created */
 	val zipperZip		= SettingKey[File]("zipper-zip")
 	
-	lazy val zipperSettings:Seq[Project.Setting[_]]	= Seq(
-		zipperBuild		<<= zipperTask,
-		zipperFiles		:=  Seq.empty,
-		zipperBundle	<<= (Keys.name, Keys.version)		{ _ + "-" + _ 	},
-		zipperPrefix	<<= zipperBundle					{ Some(_)		},
-		zipperExtension	:=  ".zip",
-		zipperName		<<= (zipperBundle, zipperExtension)	{ _ + _			},
-		zipperTarget	<<= Keys.crossTarget				{ _ / "zipper"	},
-		zipperZip		<<= (zipperTarget, zipperName)		{ _ / _			}
-	)
+	lazy val zipperSettings:Seq[Def.Setting[_]]	=
+			Seq(
+				zipperBuild		<<= zipperTask,
+				zipperFiles		:=  Seq.empty,
+				zipperBundle	<<= (Keys.name, Keys.version)		{ _ + "-" + _ 	},
+				zipperPrefix	<<= zipperBundle					{ Some(_)		},
+				zipperExtension	:=  ".zip",
+				zipperName		<<= (zipperBundle, zipperExtension)	{ _ + _			},
+				zipperTarget	<<= Keys.crossTarget				{ _ / "zipper"	},
+				zipperZip		<<= (zipperTarget, zipperName)		{ _ / _			}
+			)
 	
-	private def zipperTask:Initialize[Task[File]] = 
+	private def zipperTask:Def.Initialize[Task[File]] = 
 			(Keys.streams, zipperFiles, zipperPrefix, zipperZip) map zipperTaskImpl
 	
-	private def zipperTaskImpl(streams:TaskStreams, files:Seq[(File,String)], prefix:Option[String], zip:File):File	= {
-		streams.log info ("creating bundle zip as " + zip)
+	private def zipperTaskImpl(streams:TaskStreams, files:Traversable[(File,String)], prefix:Option[String], zip:File):File	= {
+		streams.log info ("creating bundle zip " + zip)
 		IO delete zip
 		zip.getParentFile.mkdirs()
 		
@@ -74,7 +75,7 @@ object ZipperPlugin extends Plugin {
 	private val rw_r__r__	= octal("644")
 	
 	/** paths must use a forward slash, unix mode is optional, symlinks are ignored */
-	private def bundle(streams:TaskStreams, sources:Seq[(File,String)], outputZip:File) {
+	private def bundle(streams:TaskStreams, sources:Traversable[(File,String)], outputZip:File) {
 		val outputStream	= new ZipArchiveOutputStream(outputZip)
 		// outputStream	setMethod	ZipOutputStream.DEFLATED
 		// outputStream	setLevel	0
@@ -85,7 +86,7 @@ object ZipperPlugin extends Plugin {
 			// ensure every file has a parent directory
 			val sourceDirectoryPaths	= sourceDirectories map { _._2 + "/" }
 			val sourceParentPaths		= sourceFiles		map { _._2 } flatMap pathDirs
-			val zipDirectories			= (sourceDirectoryPaths ++ sourceParentPaths).distinct
+			val zipDirectories			= (sourceDirectoryPaths ++ sourceParentPaths).toSeq.distinct
 			
 			val now			= System.currentTimeMillis
 			val emptyCRC	= (new CRC32).getValue
