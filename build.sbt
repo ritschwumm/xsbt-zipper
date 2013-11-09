@@ -4,10 +4,10 @@ name			:= "xsbt-zipper"
 
 organization	:= "de.djini"
 
-version			:= "0.5.0"
+version			:= "0.6.0"
 
 libraryDependencies	++= Seq(
-	"org.apache.commons"	% "commons-compress"	% "1.4.1"	% "compile"
+	"org.apache.commons"	% "commons-compress"	% "1.6"	% "compile"
 )
 
 scalacOptions	++= Seq(

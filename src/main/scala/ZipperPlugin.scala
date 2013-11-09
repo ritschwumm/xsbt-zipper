@@ -50,7 +50,7 @@ object ZipperPlugin extends Plugin {
 			(Keys.streams, zipperFiles, zipperPrefix, zipperZip) map zipperTaskImpl
 	
 	private def zipperTaskImpl(streams:TaskStreams, files:Traversable[(File,String)], prefix:Option[String], zip:File):File	= {
-		streams.log info ("creating bundle zip " + zip)
+		streams.log info s"creating bundle zip ${zip}"
 		IO delete zip
 		zip.getParentFile.mkdirs()
 		
