@@ -4,7 +4,7 @@ name			:= "xsbt-zipper"
 
 organization	:= "de.djini"
 
-version			:= "0.6.0"
+version			:= "0.7.0"
 
 libraryDependencies	++= Seq(
 	"org.apache.commons"	% "commons-compress"	% "1.6"	% "compile"

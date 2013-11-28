@@ -36,20 +36,28 @@ object ZipperPlugin extends Plugin {
 	
 	lazy val zipperSettings:Seq[Def.Setting[_]]	=
 			Seq(
-				zipperBuild		<<= zipperTask,
-				zipperFiles		:=  Seq.empty,
-				zipperBundle	<<= (Keys.name, Keys.version)		{ _ + "-" + _ 	},
-				zipperPrefix	<<= zipperBundle					{ Some(_)		},
-				zipperExtension	:=  ".zip",
-				zipperName		<<= (zipperBundle, zipperExtension)	{ _ + _			},
-				zipperTarget	<<= Keys.crossTarget				{ _ / "zipper"	},
-				zipperZip		<<= (zipperTarget, zipperName)		{ _ / _			}
+				zipperBuild		:= 
+						zipperTaskImpl(
+							streams	= Keys.streams.value,
+							files	= zipperFiles.value,
+							prefix	= zipperPrefix.value,
+							zip		= zipperZip.value
+						),
+				zipperFiles		:= Seq.empty,
+				zipperBundle	:= Keys.name.value + "-" + Keys.version.value,
+				zipperPrefix	:= Some(zipperBundle.value),
+				zipperExtension	:= ".zip",
+				zipperName		:= zipperBundle.value + zipperExtension.value,
+				zipperTarget	:= Keys.crossTarget.value / "zipper",
+				zipperZip		:= zipperTarget.value / zipperName.value
 			)
 	
-	private def zipperTask:Def.Initialize[Task[File]] = 
-			(Keys.streams, zipperFiles, zipperPrefix, zipperZip) map zipperTaskImpl
-	
-	private def zipperTaskImpl(streams:TaskStreams, files:Traversable[(File,String)], prefix:Option[String], zip:File):File	= {
+	private def zipperTaskImpl(
+		streams:TaskStreams,
+		files:Traversable[(File,String)], 
+		prefix:Option[String],
+		zip:File
+	):File	= {
 		streams.log info s"creating bundle zip ${zip}"
 		IO delete zip
 		zip.getParentFile.mkdirs()
