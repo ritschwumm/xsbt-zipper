@@ -10,33 +10,18 @@ import org.apache.commons.compress.archivers.zip._
 import org.apache.commons.compress.utils.IOUtils
 
 object ZipperPlugin extends Plugin {
-	/** build the zip file */
-	val zipperBuild		= TaskKey[File]("zipper")
-	
-	/** files to be included in the bundle zip */
-	val zipperFiles		= TaskKey[Traversable[(File,String)]]("zipper-files")
-	
-	/** default name for common directory prefix and bundle zip */
-	val zipperBundle	= SettingKey[String]("zipper-bundle")
-	
-	/** common directory prefix for all files in the bundle zip */
-	val zipperPrefix	= SettingKey[Option[String]]("zipper-prefix")
-	
-	/** file extension for the bundle zip */
-	val zipperExtension	= SettingKey[String]("zipper-extension")
-	
-	/** file name of the bundle zip */
-	val zipperName		= SettingKey[String]("zipper-name")
-	
-	/** directory for the bundle zip file */
-	val zipperTarget	= SettingKey[File]("zipper-target")
-	
-	/** bundle zip file to be created */
-	val zipperZip		= SettingKey[File]("zipper-zip")
+	val zipper			= taskKey[File]("build the zip file and return it")
+	val zipperFiles		= taskKey[Traversable[(File,String)]]("files to be included in the bundle zip")
+	val zipperBundle	= settingKey[String]("default name for common directory prefix and bundle zip")
+	val zipperPrefix	= settingKey[Option[String]]("common directory prefix for all files in the bundle zip")
+	val zipperExtension	= settingKey[String]("file extension for the bundle zip")
+	val zipperName		= settingKey[String]("file name of the bundle zip")
+	val zipperTarget	= settingKey[File]("directory for the bundle zip file")
+	val zipperZip		= settingKey[File]("bundle zip file to be created")
 	
 	lazy val zipperSettings:Seq[Def.Setting[_]]	=
 			Seq(
-				zipperBuild		:= 
+				zipper	:= 
 						zipperTaskImpl(
 							streams	= Keys.streams.value,
 							files	= zipperFiles.value,
