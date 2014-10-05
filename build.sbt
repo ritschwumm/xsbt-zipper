@@ -4,11 +4,7 @@ name			:= "xsbt-zipper"
 
 organization	:= "de.djini"
 
-version			:= "0.8.0"
-
-libraryDependencies	++= Seq(
-	"org.apache.commons"	% "commons-compress"	% "1.8.1"	% "compile"
-)
+version			:= "1.0.0"
 
 scalacOptions	++= Seq(
 	"-deprecation",
@@ -22,3 +18,9 @@ scalacOptions	++= Seq(
 	// "-language:experimental.macros"
 	"-feature"
 )
+
+libraryDependencies	++= Seq(
+	"org.apache.commons"	% "commons-compress"	% "1.8.1"	% "compile"
+)
+
+addSbtPlugin("de.djini" % "xsbt-util"	% "0.1.0")
