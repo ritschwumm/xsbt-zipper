@@ -1,6 +1,7 @@
+package xsbtZipper
+
 import sbt._
 import Keys.TaskStreams
-import Project.Initialize
 
 import java.io.FileInputStream
 import java.util.zip.CRC32
@@ -10,7 +11,7 @@ import org.apache.commons.compress.archivers.zip._
 
 import xsbtUtil._
 
-object ZipperPlugin extends Plugin {
+object Import {
 	val zipper			= taskKey[File]("build the zip file and return it")
 	val zipperFiles		= taskKey[Traversable[PathMapping]]("files to be included in the bundle zip")
 	val zipperBundle	= settingKey[String]("default name for common directory prefix and bundle zip")
@@ -20,10 +21,11 @@ object ZipperPlugin extends Plugin {
 	val zipperTargetDir	= settingKey[File]("directory for the bundle zip file")
 	val zipperZip		= settingKey[File]("bundle zip file to be created")
 	
-	lazy val zipperSettings:Seq[Def.Setting[_]]	=
+	// exported so they can be consumed like inTask(task)(zipperSettings ++ Seq(zipperFiles := selectSubPaths(...)))
+	val zipperSettings:Seq[Def.Setting[_]]	=
 			Seq(
 				zipper	:= 
-						zipperTask(
+						ZipperPlugin zipperTask (
 							streams	= Keys.streams.value,
 							files	= zipperFiles.value,
 							prefix	= zipperPrefix.value,
@@ -37,8 +39,35 @@ object ZipperPlugin extends Plugin {
 				zipperTargetDir	:= Keys.crossTarget.value / "zipper",
 				zipperZip		:= zipperTargetDir.value / zipperName.value
 			)
+}
+
+object ZipperPlugin extends AutoPlugin {
+	//------------------------------------------------------------------------------
+	//## constants
 	
-	private def zipperTask(
+	private val fileMode	= parseOctal("100000")
+	private val dirMode		= parseOctal("040000")
+	private val linkMode	= parseOctal("120000")
+		
+	private val rwxr_xr_x	= parseOctal("755")
+	private val rw_r__r__	= parseOctal("644")
+	
+	//------------------------------------------------------------------------------
+	//## exports
+	
+	override def requires:Plugins		= empty
+	
+	override def trigger:PluginTrigger	= allRequirements
+	
+	lazy val autoImport	= Import
+	import autoImport._
+	
+	override def projectSettings:Seq[Def.Setting[_]]	= zipperSettings
+	
+	//------------------------------------------------------------------------------
+	//## tasks
+	
+	def zipperTask(
 		streams:TaskStreams,
 		files:Traversable[PathMapping], 
 		prefix:Option[String],
@@ -58,13 +87,6 @@ object ZipperPlugin extends Plugin {
 		
 		zip
 	}
-	
-	private val fileMode	= parseOctal("100000")
-	private val dirMode		= parseOctal("040000")
-	private val linkMode	= parseOctal("120000")
-		
-	private val rwxr_xr_x	= parseOctal("755")
-	private val rw_r__r__	= parseOctal("644")
 	
 	/** paths must use a forward slash, unix mode is optional, symlinks are ignored */
 	private def bundle(streams:TaskStreams, sources:Traversable[PathMapping], outputZip:File) {
