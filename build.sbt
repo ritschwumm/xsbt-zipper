@@ -1,10 +1,8 @@
 sbtPlugin		:= true
 
 name			:= "xsbt-zipper"
-
 organization	:= "de.djini"
-
-version			:= "1.3.0"
+version			:= "1.4.0"
 
 scalacOptions	++= Seq(
 	"-deprecation",
@@ -16,13 +14,9 @@ scalacOptions	++= Seq(
 	// "-language:dynamics",
 	// "-language:postfixOps",
 	// "-language:experimental.macros"
-	"-feature"
+	"-feature",
+	"-Xfatal-warnings"
 )
 
 conflictManager	:= ConflictManager.strict
-
-libraryDependencies	++= Seq(
-	"org.apache.commons"	% "commons-compress"	% "1.8.1"	% "compile"
-)
-
-addSbtPlugin("de.djini" % "xsbt-util"	% "0.3.0")
+addSbtPlugin("de.djini" % "xsbt-util"	% "0.4.0")
