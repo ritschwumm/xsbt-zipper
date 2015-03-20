@@ -41,9 +41,9 @@ object ZipperPlugin extends AutoPlugin {
 	
 	override val trigger:PluginTrigger	= noTrigger
 	
-	override lazy val projectSettings:Seq[Def.Setting[_]]	= 
+	override lazy val projectSettings:Seq[Def.Setting[_]]	=
 			Vector(
-				zipper	:= 
+				zipper	:=
 						ZipperPlugin zipperTask (
 							streams	= Keys.streams.value,
 							sources	= zipperSources.value,
@@ -67,7 +67,7 @@ object ZipperPlugin extends AutoPlugin {
 	
 	def zipperTask(
 		streams:TaskStreams,
-		sources:Traversable[PathMapping], 
+		sources:Traversable[PathMapping],
 		prefix:Option[String],
 		zip:File
 	):File	= {
