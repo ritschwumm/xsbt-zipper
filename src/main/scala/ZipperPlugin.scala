@@ -75,13 +75,12 @@ object ZipperPlugin extends AutoPlugin {
 		IO delete zip
 		zip.mkParentDirs()
 
-		val addPrefix:Endo[PathMapping]	=
-				prefix match {
-					case Some(s)	=> xu.second modify (s + "/" + _)
-					case None		=> identity
-				}
+		val totalPrefix	= prefix.map(_ + "/").getOrElse("")
+
 		val prefixed:Traversable[PathMapping]	=
-				sources map addPrefix
+			sources map { case (file, path) =>
+				(file, totalPrefix + path)
+			}
 
 		xu.zip create (prefixed, zip)
 		zip
